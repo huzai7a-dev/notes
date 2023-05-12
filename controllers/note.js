@@ -1,11 +1,13 @@
 import validateNote from '../validations/note.js';
 import Note from '../models/note.js';
 
+const allStatus = ['note', 'archive', 'trash'];
+
 const createNote = async (req, res) => {
   try {
     const { error } = validateNote(req.body);
     if (error) {
-      return res.status(400).send(error?.details[0].message);
+      return res.status(400).send({message:error?.details[0].message});
     }
 
     const note = {
@@ -19,7 +21,7 @@ const createNote = async (req, res) => {
     return res.status(201).send({ data: result, message: 'Note added successfully' });
   } catch (error) {
     console.error('Error creating note:', error);
-    return res.status(500).send('Internal Server Error');
+    return res.status(500).send({message:'Internal Server Error'});
   }
 };
 
@@ -42,8 +44,31 @@ const getNotes = async (req, res) => {
     return res.status(200).send(notes);
   } catch (error) {
     console.error('Error getting notes:', error);
-    return res.status(500).send('Internal Server Error');
+    return res.status(500).send({message:'Internal Server Error'});
   }
 };
 
-export { createNote, getNotes };
+const updateNoteStatus = async(req, res) => {
+  
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!id) return res.status(400).send({ message: 'Id is not provided' });
+
+  if (!status || !allStatus.includes(status)) {
+    return res.status(400).send({message:'Not a valid status'})
+  }
+  try {
+
+    const note = await Note.findByIdAndUpdate(id, { $set: { status } }, {new:true});
+    res.status(200).send({data:note,message:'note updated succesfully'})
+
+  } catch (error) {
+
+    console.error('Error getting notes:', error);
+    return res.status(500).send({message:'Internal Server Error'});
+  }
+
+}
+
+export { createNote, getNotes,updateNoteStatus };
